@@ -19,6 +19,12 @@
  
 - OS: Ubuntu 18.04.2 LTS
 
+### ソフトウェア要件
+別件で TensorFlow も使いたいので両方が動作する環境は次のようになっています．
+- Python 2.7 or Python 3.5 以上
+- nVidia Driver 410.x 以降
+- CUDA 9.0 or CUDA 10.0
+- cuDNN 7.4.1 以降
 
 ### GPU ドライバのインストール
 最初にデフォルトのドライバを無効にします．
@@ -45,22 +51,22 @@ $ sudo apt-get install freeglut3-dev
 
 ここまで済んだら一度再起動して nvidia-smi で確認します．
 
-### CUDA 10.1 の導入
-[nVidia のページ](https://developer.nvidia.com/)で確認して最新版の CUDA を入れます．
+### CUDA 10.0 の導入
+TensorFlow も PyTorch もサポートは CUDA 10.0 だけなので，CUDA 10.1 は使いません．
+（一応，PyTorch は CUDA 10.1 でも動きました．）
+[CUDA 10.0 のダウンロードページ](/developer.nvidia.com/cuda-10.0-download-archive?target_os=Linux&target_arch=x86_64&target_distro=Ubuntu&target_version=1804&target_type=deblocal)から .deb ファイルをダウンロードしておきます．  
+３行目で CUDA のバージョンをちゃんと指定しないと勝手に最新版の 10.1 が入ってしまうので注意．
 
 ```bash
-$ sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-$ wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-repo-ubuntu1804_10.1.168-1_amd64.deb
-$ sudo dpkg -i cuda-repo-ubuntu1804_10.1.168-1_amd64.deb
+$ sudo dpkg -i cuda-repo-ubuntu1804-10-0-local-10.0.130-410.48_1.0-1_amd64.deb
 $ sudo apt update
-$ sudo apt install cuda cuda-drivers
+$ sudo apt install cuda-10-0 cuda-drivers
 $ sudo reboot
-$ rm cuda-repo-ubuntu1804_10.1.168-1_amd64.deb
 ```
 
 インストールできたら PATH を通します．
 ```bash
-$ echo 'export PATH="/usr/local/cuda-9.0/bin:$PATH"' >> ~/.bashrc
+$ echo 'export PATH="/usr/local/cuda/bin:$PATH"' >> ~/.bashrc
 $ echo 'export LD_LIBRARY_PATH="/usr/local/cuda/lib64:$LD_LIBRARY_PATH"' >> ~/.bashrc
 $ sudo reboot
 ```
@@ -69,21 +75,21 @@ $ sudo reboot
 ```bash
 $ nvcc -V
 nvcc: NVIDIA (R) Cuda compiler driver
-Copyright (c) 2005-2019 NVIDIA Corporation
-Built on Wed_Apr_24_19:10:27_PDT_2019
-Cuda compilation tools, release 10.1, V10.1.168
+Copyright (c) 2005-2018 NVIDIA Corporation
+Built on Sat_Aug_25_21:08:01_CDT_2018
+Cuda compilation tools, release 10.0, V10.0.130
 ```
 
 ### cuDNN の導入
 [cuDNN のダウンロードページ](https://developer.nvidia.com/rdp/cudnn-download)から以下の３つのファイルをダウンロードします．
-- cuDNN v7.6.2 Runtime Library for Ubuntu18.04 (Deb)
-- cuDNN v7.6.2 Developer Library for Ubuntu18.04 (Deb)
-- cuDNN v7.6.2 Code Samples and User Guide for Ubuntu18.04 (Deb)
+- cuDNN v7.6.1 Runtime Library for Ubuntu18.04 (Deb)
+- cuDNN v7.6.1 Developer Library for Ubuntu18.04 (Deb)
+- cuDNN v7.6.1 Code Samples and User Guide for Ubuntu18.04 (Deb)
 
 ```bash
-$ sudo dpkg -i libcudnn7_7.6.2.24-1+cuda10.1_amd64.deb
-$ sudo dpkg -i libcudnn7-dev_7.6.2.24-1+cuda10.1_amd64.deb
-$ sudo dpkg -i libcudnn7-doc_7.6.2.24-1+cuda10.1_amd64.deb
+$ sudo dpkg -i libcudnn7_7.6.1.34-1+cuda10.0_amd64.deb
+$ sudo dpkg -i libcudnn7-dev_7.6.1.34-1+cuda10.0_amd64.deb
+$ sudo dpkg -i libcudnn7-doc_7.6.1.34-1+cuda10.0_amd64.deb
 ```
 
 ### PyTorch のインストール
