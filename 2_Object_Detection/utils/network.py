@@ -168,19 +168,20 @@ class DBox(object):
 class SSD(nn.Module):
     def __init__(self, phase, cfg):
         super(SSD, self).__init__()
-        self.phase = phase  #train or inference
-        self.num_classes = cfg["num_classes"]  # クラス数 21
-        
-        # SSD のネットワークを作る
+
+        self.phase = phase  # train or inferenceを指定
+        self.num_classes = cfg["num_classes"]  # クラス数=21
+
+        # SSDのネットワークを作る
         self.vgg = make_vgg()
         self.extras = make_extras()
         self.L2Norm = L2Norm()
         self.loc, self.conf = make_loc_conf(cfg["num_classes"], cfg["bbox_aspect_num"])
-        
-        # デフォルトボックスの作成
+
+        # DBox作成
         dbox = DBox(cfg)
         self.dbox_list = dbox.make_dbox_list()
-        
-        # 推論時はクラス「Detect」を用意
+
+        # 推論時はクラス「Detect」を用意します
         if phase == 'inference':
-            self.detec = Detect()
+            self.detect = Detect()
