@@ -14,7 +14,7 @@ class PSPNet(nn.Module):
         
         # 4つのモジュールを構成するサブネットワークを用意
         # Feature モジュール
-        self.feature_conv = FeatureMap_Convolution()
+        self.feature_conv = FeatureMap_convolution()
         self.feature_res_1 = ResidualBlockPSP(n_blocks=block_config[0], 
                                               in_channels=128, mid_channels=64, out_channels=256, stride=1, dilation=1)
         self.feature_res_2 = ResidualBlockPSP(n_blocks=block_config[1], 
@@ -59,7 +59,7 @@ class conv2DBatchNorm(nn.Module):
         return outputs    
     
     
-class conv2dDBatchNormRelu(nn.Module):
+class conv2DBatchNormRelu(nn.Module):
     ''' 畳み込み + Batch Normalization + ReLU のブロックを構成するクラス '''
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation, bias):
         super(conv2DBatchNormRelu, self).__init__()
@@ -117,11 +117,11 @@ class ResidualBlockPSP(nn.Sequential):
 
 class bottleNeckPSP(nn.Module):
     ''' Feature モジュール内 Residual ブロックの 1 段目 '''
-    def __init__(self, in_channels, mid_channels, out_channels, kernel_size, stride, dilation):
+    def __init__(self, in_channels, mid_channels, out_channels, stride, dilation):
         super(bottleNeckPSP, self).__init__()
-        self.cbr_1 = conv2dBatchNormRelu(in_channels, mid_channels, kernel_size=1, 
+        self.cbr_1 = conv2DBatchNormRelu(in_channels, mid_channels, kernel_size=1, 
                                          stride=1, padding=0, dilation=1, bias=False)
-        self.cbr_2 = conv2dBatchNormRelu(mid_channels, mid_channels, kernel_size=3, 
+        self.cbr_2 = conv2DBatchNormRelu(mid_channels, mid_channels, kernel_size=3, 
                                          stride=stride, padding=dilation, dilation=dilation, bias=False)
         self.cb_3 = conv2DBatchNorm(mid_channels, out_channels, kernel_size=1,
                                     stride=1, padding=0, dilation=1, bias=False)
@@ -139,9 +139,9 @@ class bottleNeckIdentifyPSP(nn.Module):
     ''' Feature モジュール内 Residual ブロックの 2 段目以降 '''
     def __init__(self, in_channels, mid_channels, stride, dilation):
         super(bottleNeckIdentifyPSP, self).__init__()
-        self.cbr_1 = conv2dBatchNormRelu(in_channels, mid_channels, kernel_size=1, 
+        self.cbr_1 = conv2DBatchNormRelu(in_channels, mid_channels, kernel_size=1, 
                                          stride=1, padding=0, dilation=1, bias=False)
-        self.cbr_2 = conv2dBatchNormRelu(mid_channels, mid_channels, kernel_size=3, 
+        self.cbr_2 = conv2DBatchNormRelu(mid_channels, mid_channels, kernel_size=3, 
                                          stride=1, padding=dilation, dilation=dilation, bias=False)
         self.cb_3 = conv2DBatchNorm(mid_channels, in_channels, kernel_size=1,
                                     stride=1, padding=0, dilation=1, bias=False)
@@ -197,9 +197,46 @@ class PyramidPooling(nn.Module):
         
         return output
     
+    
+class DecodePSPFeature(nn.Module):
+    ''' Decode モジュール '''
+    def __init__(self, height, width, n_classes):
+        super(DecodePSPFeature, self).__init__()
+        
+        # forward で使用する画像サイズ
+        self.height = height
+        self.width = width
+        
+        self.cbr = conv2DBatchNormRelu(in_channels=4096, out_channels=512, kernel_size=3, stride=1, padding=1, dilation=1, bias=False)
+        self.dropout = nn.Dropout2d(p=0.1)
+        self.classification = nn.Conv2d(in_channels=512, out_channels=n_classes, kernel_size=1, stride=1, padding=0)
+        
+    def forward(self, x):
+        x = self.cbr(x)
+        x = self.dropout(x)
+        x = self.classification(x)
+        output = F.interpolate(x, size=(self.height, self.width), mode="bilinear", align_corners=True)
+        
+        return output
+    
 
-''' Decode モジュール '''
-
-
-
-''' AuxLoss モジュール '''
+class AuxiliaryPSPlayers(nn.Module):
+    ''' AuxLoss モジュール '''
+    def __init__(self, in_channels, height, width, n_classes):
+        super(AuxiliaryPSPlayers, self).__init__()
+        
+        # forward で使用する画像サイズ
+        self.height = height
+        self.width = width
+        
+        self.cbr = conv2DBatchNormRelu(in_channels=in_channels, out_channels=256, kernel_size=3, stride=1, padding=1, dilation=1, bias=False)
+        self.dropout = nn.Dropout2d(p=0.1)
+        self.classification = nn.Conv2d(in_channels=256, out_channels=n_classes, kernel_size=1, stride=1, padding=0)
+        
+    def forward(self, x):
+        x = self.cbr(x)
+        x = self.dropout(x)
+        x = self.classification(x)
+        output = F.interpolate(x, size=(self.height, self.width), mode="bilinear", align_corners=True)
+        
+        return output

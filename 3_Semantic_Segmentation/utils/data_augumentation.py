@@ -24,7 +24,6 @@ class Scale(object):
         self.scale = scale
 
     def __call__(self, img, anno_class_img):
-
         width = img.size[0]  # img.size=[幅][高さ]
         height = img.size[1]  # img.size=[幅][高さ]
 
